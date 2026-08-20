@@ -106,12 +106,13 @@ export default function UserDashboard({ user, onBack }) {
       const razorpay = new window.Razorpay(options);
       razorpay.on("payment.failed", function () {
         alert("Payment failed. Please try again.");
+        setPaying(false);
       });
       razorpay.open();
     } catch (err) {
       alert("Failed to initiate payment");
+      setPaying(false);
     }
-    setPaying(false);
   };
 
   const activeNotes = Array.isArray(notes) ? notes.filter((n) => n.active) : [];
