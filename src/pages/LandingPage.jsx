@@ -275,7 +275,12 @@ export default function LandingPage({ user, setUser, onNavigate }) {
         }
       }
     } catch (err) {
-      setAuthMsg(err.response?.data || "Something went wrong");
+      const msg = typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message
+          || err.response?.data?.error
+          || "Something went wrong";
+      setAuthMsg(msg);
     }
   };
 
