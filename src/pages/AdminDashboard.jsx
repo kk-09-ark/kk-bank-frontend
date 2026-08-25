@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getStats, getAllUsers, updateUser, deleteUser, getAllPayments, adminCreateNote, adminUpdateNote, adminDeleteNote } from "../api/admin";
+import { getStats, getAllUsers, updateUser, deleteUser, getAllPayments, adminCreateNote, adminUpdateNote, adminDeleteNote, getSubscriptions, grantAccess, revokeAccess } from "../api/admin";
 import { getAllNotes } from "../api/notes";
 import { uploadPdf, uploadImage } from "../api/upload";
 import { downloadNote } from "../utils/download";
@@ -85,6 +85,7 @@ export default function AdminDashboard({ user, onLogout }) {
   const [users, setUsers] = useState([]);
   const [notes, setNotes] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
   const [noteForm, setNoteForm] = useState({ title: "", description: "", pdfUrl: "", price: "", active: true });
@@ -93,13 +94,25 @@ export default function AdminDashboard({ user, onLogout }) {
   const [uploading, setUploading] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [grantEmail, setGrantEmail] = useState("");
 
-  useEffect(() => { if (tab === "stats") loadStats(); if (tab === "users") loadUsers(); if (tab === "notes") loadNotes(); if (tab === "payments") loadPayments(); }, [tab]);
+  useEffect(() => { if (tab === "stats") loadStats(); if (tab === "users") loadUsers(); if (tab === "notes") loadNotes(); if (tab === "payments") loadPayments(); if (tab === "subscriptions") loadSubscriptions(); }, [tab]);
 
   const loadStats = async () => { try { const r = await getStats(); setStats(r.data); } catch {} };
   const loadUsers = async () => { try { const r = await getAllUsers(); setUsers(r.data); } catch {} };
   const loadNotes = async () => { try { const r = await getAllNotes(); setNotes(r.data); } catch {} };
   const loadPayments = async () => { try { const r = await getAllPayments(); setPayments(r.data); } catch {} };
+  const loadSubscriptions = async () => { try { const r = await getSubscriptions(); setSubscriptions(r.data); } catch {} };
+
+  const handleGrantAccess = async (email) => {
+    if (!confirm(`Grant premium access to ${email}?`)) return;
+    try { await grantAccess(email); loadSubscriptions(); } catch { alert("Failed to grant access"); }
+  };
+
+  const handleRevokeAccess = async (userId) => {
+    if (!confirm("Revoke premium access?")) return;
+    try { await revokeAccess(userId); loadSubscriptions(); } catch { alert("Failed to revoke access"); }
+  };
 
   const handleDeleteUser = async (id) => {
     if (!confirm("Delete this user?")) return;
@@ -356,6 +369,51 @@ export default function AdminDashboard({ user, onLogout }) {
     </table>
   );
 
+  const renderSubscriptions = () => (
+    <div>
+      <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center" }}>
+        <input style={{ ...styles.input, marginBottom: 0, flex: 1, maxWidth: 350 }}
+          placeholder="Enter email to grant premium access" value={grantEmail}
+          onChange={(e) => setGrantEmail(e.target.value)} />
+        <button style={styles.btn} onClick={async () => {
+          if (!grantEmail.trim()) return;
+          await handleGrantAccess(grantEmail.trim());
+          setGrantEmail("");
+        }}>Grant Access</button>
+      </div>
+      <table style={styles.table}>
+        <thead><tr>
+          <th style={styles.th}>Name</th>
+          <th style={styles.th}>Email</th>
+          <th style={styles.th}>Role</th>
+          <th style={styles.th}>Premium</th>
+          <th style={styles.th}>Actions</th>
+        </tr></thead>
+        <tbody>
+          {subscriptions.map(s => (
+            <tr key={s.userId}>
+              <td style={styles.td}>{s.name}</td>
+              <td style={styles.td}>{s.email}</td>
+              <td style={styles.td}><span style={{ color: s.role === "ROLE_ADMIN" ? "#E8C468" : "#A9BBAF" }}>{s.role}</span></td>
+              <td style={styles.td}>
+                <span style={{ color: s.hasPremium ? "#27c93f" : "#ff5f56", fontWeight: 600, fontSize: 12 }}>
+                  {s.hasPremium ? "Active" : "None"}
+                </span>
+              </td>
+              <td style={styles.td}>
+                {s.hasPremium ? (
+                  <button style={styles.actionBtn("#ff5f56")} onClick={() => handleRevokeAccess(s.userId)}>Revoke</button>
+                ) : (
+                  <button style={styles.actionBtn("#27c93f")} onClick={() => handleGrantAccess(s.email)}>Grant</button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
     <div style={styles.root}>
       <div style={styles.wrap}>
@@ -367,7 +425,7 @@ export default function AdminDashboard({ user, onLogout }) {
           </div>
         </div>
         <div style={styles.tabs}>
-          {["stats", "users", "notes", "payments"].map(t => (
+          {["stats", "users", "notes", "payments", "subscriptions"].map(t => (
             <button key={t} style={styles.tab(tab === t)} onClick={() => setTab(t)}>
               {t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
@@ -377,6 +435,7 @@ export default function AdminDashboard({ user, onLogout }) {
         {tab === "users" && renderUsers()}
         {tab === "notes" && renderNotes()}
         {tab === "payments" && renderPayments()}
+        {tab === "subscriptions" && renderSubscriptions()}
       </div>
     </div>
   );

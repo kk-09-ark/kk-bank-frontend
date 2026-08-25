@@ -17,3 +17,9 @@ export const adminCreateNote = (note) => client.post("/api/admin/notes", note);
 export const adminUpdateNote = (id, note) => client.put(`/api/admin/notes/${id}`, note);
 
 export const adminDeleteNote = (id) => client.delete(`/api/admin/notes/${id}`);
+
+export const getSubscriptions = () => client.get("/api/admin/subscriptions");
+
+export const grantAccess = (email) => client.post("/api/admin/grant-access", { email });
+
+export const revokeAccess = (userId) => client.delete(`/api/admin/revoke-access/${userId}`);
