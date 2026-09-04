@@ -225,7 +225,7 @@ export default function LandingPage({ user, setUser, onNavigate }) {
     url && !url.startsWith("http") ? `${import.meta.env.VITE_API_BASE_URL || ""}${url}` : url;
 
   const scrollToBuy = useCallback(() => {
-    buyRef.current?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
   const scrollFocusedIntoView = useCallback(() => {
