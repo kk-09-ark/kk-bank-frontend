@@ -157,6 +157,7 @@ export default function LandingPage({ user, setUser, onNavigate }) {
   const [authMode, setAuthMode] = useState("login");
   const [authForm, setAuthForm] = useState({ name: "", email: "", password: "" });
   const [authMsg, setAuthMsg] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
   const [purchaseStatus, setPurchaseStatus] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedBundle, setSelectedBundle] = useState(null);
@@ -268,7 +269,11 @@ export default function LandingPage({ user, setUser, onNavigate }) {
 
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
+    if (document.activeElement && document.activeElement.tagName === "INPUT") {
+      document.activeElement.blur();
+    }
     setAuthMsg("");
+    setAuthLoading(true);
     try {
       if (authMode === "login") {
         const res = await login({ email: authForm.email, password: authForm.password });
@@ -288,13 +293,16 @@ export default function LandingPage({ user, setUser, onNavigate }) {
           setAuthMode("login");
           setAuthForm({ name: "", email: "", password: "" });
         }
+        if (modalRef.current) modalRef.current.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch (err) {
       const msg = typeof err.response?.data === "string"
         ? err.response.data
-        : err.response?.data?.message || err.response?.data?.error || "Something went wrong";
+        : err.response?.data?.message || err.response?.data?.error || "Something went wrong. Please try again.";
       setAuthMsg(msg);
+      if (modalRef.current) modalRef.current.scrollTo({ top: 0, behavior: "smooth" });
     }
+    setAuthLoading(false);
   };
 
   const handleLogout = () => {
@@ -667,11 +675,11 @@ export default function LandingPage({ user, setUser, onNavigate }) {
         .kkn-modal .switch{text-align:center;margin-top:16px;font-size:13px;color:var(--text-dim);}
         .kkn-modal .switch a{color:var(--accent);cursor:pointer;text-decoration:underline;}
         .kkn-modal .msg{
-          font-family:var(--font-mono);font-size:12px;padding:8px 12px;
-          border-radius:6px;margin-bottom:16px;
+          font-family:var(--font-mono);font-size:12px;padding:10px 14px;
+          border-radius:8px;margin-bottom:16px;line-height:1.5;
         }
-        .kkn-modal .msg.err{background:#FEF2F2;color:#DC2626;}
-        .kkn-modal .msg.ok{background:#F0FDF4;color:#16A34A;}
+        .kkn-modal .msg.err{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;}
+        .kkn-modal .msg.ok{background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;}
         .kkn-modal .close{
           position:absolute;top:16px;right:20px;
           background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;
@@ -782,15 +790,22 @@ export default function LandingPage({ user, setUser, onNavigate }) {
           }
           .kkn-modal{
             max-height:100dvh;
+            min-height:100dvh;
             width:100%;
             max-width:100%;
             border-radius:0;
             border:none;
-            padding:80px 20px 24px;
+            padding:60px 20px 32px;
+            display:flex;flex-direction:column;
           }
+          .kkn-modal .sub{margin-bottom:16px;}
+          .kkn-modal .field{margin-bottom:12px;}
+          .kkn-modal .field input{font-size:16px !important;}
+          .kkn-modal .btn-submit{margin-top:auto;position:sticky;bottom:0;}
           .kkn-modal .close{
-            position:fixed;top:12px;right:16px;
+            position:fixed;top:12px;right:16px;z-index:10;
           }
+          .kkn-modal .switch{padding-bottom:env(safe-area-inset-bottom,0);}
         }
 
         @media (max-width:900px){
@@ -1192,8 +1207,8 @@ export default function LandingPage({ user, setUser, onNavigate }) {
                 <label>Password</label>
                 <input name="password" type="password" value={authForm.password} onChange={handleAuthInput} onFocus={scrollFocusedIntoView} required minLength={6} />
               </div>
-              <button className="btn-submit" type="submit">
-                {authMode === "login" ? "Sign In" : "Create Account"}
+              <button className="btn-submit" type="submit" disabled={authLoading} style={{ opacity: authLoading ? 0.7 : 1, cursor: authLoading ? "not-allowed" : "pointer" }}>
+                {authLoading ? "Please wait..." : authMode === "login" ? "Sign In" : "Create Account"}
               </button>
             </form>
             <div className="switch">
