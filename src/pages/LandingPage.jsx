@@ -163,6 +163,7 @@ export default function LandingPage({ user, setUser, onNavigate }) {
 
   const termRef = useRef(null);
   const buyRef = useRef(null);
+  const modalRef = useRef(null);
 
   useEffect(() => {
     getAllNotes()
@@ -225,6 +226,41 @@ export default function LandingPage({ user, setUser, onNavigate }) {
   const scrollToBuy = useCallback(() => {
     buyRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
+
+  const scrollFocusedIntoView = useCallback(() => {
+    const active = document.activeElement;
+    const modal = modalRef.current;
+    if (!modal || !active || active.tagName !== "INPUT") return;
+
+    const modalRect = modal.getBoundingClientRect();
+    const fieldRect = active.getBoundingClientRect();
+
+    const bottomGap = 16;
+    const keyboardTop = typeof window.visualViewport !== "undefined"
+      ? window.innerHeight - window.visualViewport.height
+      : 0;
+    const visibleBottom = window.visualViewport?.height || window.innerHeight;
+    const fieldBottom = fieldRect.top - modalRect.top + fieldRect.height;
+
+    if (fieldBottom > modal.scrollTop + visibleBottom - keyboardTop - bottomGap) {
+      const target = fieldBottom - (visibleBottom - keyboardTop - bottomGap);
+      modal.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showAuth) return;
+    const vv = window.visualViewport;
+    const onViewportChange = () => scrollFocusedIntoView();
+    vv?.addEventListener("resize", onViewportChange);
+    vv?.addEventListener("scroll", onViewportChange);
+    window.addEventListener("resize", onViewportChange);
+    return () => {
+      vv?.removeEventListener("resize", onViewportChange);
+      vv?.removeEventListener("scroll", onViewportChange);
+      window.removeEventListener("resize", onViewportChange);
+    };
+  }, [showAuth, scrollFocusedIntoView]);
 
   const handleAuthInput = (e) => {
     setAuthForm({ ...authForm, [e.target.name]: e.target.value });
@@ -603,6 +639,9 @@ export default function LandingPage({ user, setUser, onNavigate }) {
           background:var(--surface);border:1px solid var(--border);
           border-radius:20px;padding:36px;width:100%;max-width:420px;position:relative;
           box-shadow:0 25px 60px -15px rgba(0,0,0,0.15);
+          max-height:calc(100vh - 48px);
+          overflow-y:auto;
+          -webkit-overflow-scrolling:touch;
         }
         .kkn-modal h2{font-family:var(--font-display);font-size:24px;margin-bottom:6px;}
         .kkn-modal .sub{color:var(--text-dim);font-size:14px;margin-bottom:24px;}
@@ -734,6 +773,24 @@ export default function LandingPage({ user, setUser, onNavigate }) {
           .kkn-root .nav-mobile{display:flex;}
           .kkn-root .hamburger{display:flex;}
           .kkn-root .nav-avatar{display:flex;}
+        }
+
+        @media (max-width:768px){
+          .kkn-overlay{
+            align-items:flex-start;
+            padding:0;
+          }
+          .kkn-modal{
+            max-height:100dvh;
+            width:100%;
+            max-width:100%;
+            border-radius:0;
+            border:none;
+            padding:80px 20px 24px;
+          }
+          .kkn-modal .close{
+            position:fixed;top:12px;right:16px;
+          }
         }
 
         @media (max-width:900px){
@@ -1107,7 +1164,7 @@ export default function LandingPage({ user, setUser, onNavigate }) {
 
       {showAuth && (
         <div className="kkn-overlay" onClick={() => setShowAuth(false)}>
-          <div className="kkn-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="kkn-modal" ref={modalRef} onClick={(e) => e.stopPropagation()}>
             <button className="close" onClick={() => setShowAuth(false)}>✕</button>
             <h2>{authMode === "login" ? "Welcome back" : "Create account"}</h2>
             <p className="sub">
@@ -1124,16 +1181,16 @@ export default function LandingPage({ user, setUser, onNavigate }) {
               {authMode === "register" && (
                 <div className="field">
                   <label>Name</label>
-                  <input name="name" value={authForm.name} onChange={handleAuthInput} required />
+                  <input name="name" value={authForm.name} onChange={handleAuthInput} onFocus={scrollFocusedIntoView} required />
                 </div>
               )}
               <div className="field">
                 <label>Email</label>
-                <input name="email" type="email" value={authForm.email} onChange={handleAuthInput} required />
+                <input name="email" type="email" value={authForm.email} onChange={handleAuthInput} onFocus={scrollFocusedIntoView} required />
               </div>
               <div className="field">
                 <label>Password</label>
-                <input name="password" type="password" value={authForm.password} onChange={handleAuthInput} required minLength={6} />
+                <input name="password" type="password" value={authForm.password} onChange={handleAuthInput} onFocus={scrollFocusedIntoView} required minLength={6} />
               </div>
               <button className="btn-submit" type="submit">
                 {authMode === "login" ? "Sign In" : "Create Account"}
