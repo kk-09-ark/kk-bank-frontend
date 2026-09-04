@@ -519,6 +519,29 @@ export default function LandingPage({ user, setUser, onNavigate }) {
         }
         .kkn-root .product-card .card-btn.secondary:hover{border-color:var(--accent);color:var(--accent);}
 
+        .kkn-root .note-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px;}
+        .kkn-root .note-card-demo{
+          background:var(--surface);border:1px solid var(--border);border-radius:14px;
+          overflow:hidden;transition:transform .25s, box-shadow .25s, border-color .25s;
+          display:flex;flex-direction:column;
+        }
+        .kkn-root .note-card-demo:hover{transform:translateY(-4px);box-shadow:0 20px 40px -14px rgba(0,0,0,0.1);border-color:var(--accent);}
+        .kkn-root .note-card-demo .thumb{aspect-ratio:1.4;overflow:hidden;background:var(--surface-2);}
+        .kkn-root .note-card-demo .thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s;}
+        .kkn-root .note-card-demo:hover .thumb img{transform:scale(1.05);}
+        .kkn-root .note-card-demo .body{padding:16px;display:flex;flex-direction:column;flex:1;}
+        .kkn-root .note-card-demo .demo-title{
+          font-family:var(--font-mono);font-weight:700;font-size:14px;line-height:1.4;color:var(--text);
+          margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+        }
+        .kkn-root .note-card-demo .demo-tag{
+          font-family:var(--font-mono);font-size:10.5px;color:var(--accent);
+          letter-spacing:0.08em;text-transform:uppercase;margin-top:auto;
+          padding-top:10px;border-top:1px solid var(--border);
+        }
+        .kkn-root .notes-more{margin-top:32px;text-align:center;}
+        .kkn-root .notes-more .btn-buy{font-size:14px;padding:14px 28px;}
+
         .kkn-root .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
         .kkn-root .step{
           border:1px solid var(--border);border-radius:14px;padding:28px;
@@ -961,6 +984,42 @@ export default function LandingPage({ user, setUser, onNavigate }) {
                     </button>
                   </Reveal>
                 ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="section" id="bundle">
+            <div className="wrap">
+              <Reveal className="section-head">
+                <div className="section-eyebrow">What's inside / {Array.isArray(notes) ? notes.length : 0} PDFs</div>
+                <div className="section-title">A peek at the notes.</div>
+                <p className="section-sub">
+                  Every PDF is written and formatted for real interview prep and quick revision — not filler.
+                  New topics get added regularly, and they're included in your bundle.
+                </p>
+              </Reveal>
+              <div className="note-grid">
+                {notes.filter((n) => n.active).map((note) => (
+                  <Reveal className="note-card-demo" key={note.id}>
+                    {note.thumbnailUrl && (
+                      <div className="thumb">
+                        <img src={resolveAsset(note.thumbnailUrl)} alt={note.title} loading="lazy" />
+                      </div>
+                    )}
+                    <div className="body">
+                      <div className="demo-title">{note.title}</div>
+                      <div className="demo-tag">{note.pdfUrl ? "PDF Ready" : "Coming soon"}</div>
+                    </div>
+                  </Reveal>
+                ))}
+                {(!Array.isArray(notes) || notes.length === 0) && (
+                  <div style={{ color: "var(--text-dim)", fontSize: 14 }}>No notes available yet.</div>
+                )}
+              </div>
+              <div className="notes-more">
+                <button className="btn-buy" onClick={() => handleBuyBundle(PRODUCTS[2])}>
+                  Unlock everything — ₹39 <span className="arrow">→</span>
+                </button>
               </div>
             </div>
           </section>
